@@ -1,11 +1,28 @@
+import dotenv from "dotenv";
 import express from "express";
+import connectDB from "./db/index.js";
 
-const PORT = 6969;
+// dotenv config
+dotenv.config({
+  path: "./.env"
+})
 
 const app = express();
+app.use(express.json());
 
-app.use("/api/auth", authRouter);
+app.get("/", (req, res) => {
+  res.send("Backend is running")
+});
 
-app.listen(PORT, () => {
-  console.log(`Server running on port: ${PORT}`)
-})
+const PORT = process.env.PORT || 6969;
+
+connectDB()
+  .then(() => {
+    console.log("DB connection success");
+    app.listen(PORT, () => {
+      console.log(`server running on port: ${PORT}`);
+    })
+  })
+  .catch((err) => {
+    console.log(`DB connection failed: ${err}`);
+  });
