@@ -6,7 +6,6 @@ const router = express.Router();
 
 router.post("/signup", async (req, res) => {
   try {
-    console.log("SIGNUP BODY =>", req.body);
 
     let { name, email, password } = req.body;
 
@@ -31,8 +30,6 @@ router.post("/signup", async (req, res) => {
       salt,
     });
 
-    console.log("USER CREATED =>", user.email);
-
     return res.status(201).json({ message: "User created successfully" });
   } catch (error) {
     console.log("SIGNUP ERROR =>", error);
@@ -42,7 +39,6 @@ router.post("/signup", async (req, res) => {
 
 router.post("/login", async (req, res) => {
   try {
-    console.log("LOGIN BODY =>", req.body);
 
     let { email, password } = req.body;
 
