@@ -1,38 +1,74 @@
-import express from "express"
+import express from "express";
 import { User } from "../models/User.js";
-import { createHmac, randomBytes } from "node:crypto"
+import { createHmac, randomBytes } from "node:crypto";
 
 const router = express.Router();
 
 router.post("/signup", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    console.log("SIGNUP BODY =>", req.body);
+
+    let { name, email, password } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
+    email = email.trim().toLowerCase();
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(409).json({ message: "Email already exists" })
+      return res.status(409).json({ message: "Email already exists" });
     }
 
-    const salt = randomBytes(256).toString('hex')
-    const hashPass = createHmac('sha256', salt).update(password).digest('hex')
+    const salt = randomBytes(16).toString("hex");
+    const hashPass = createHmac("sha256", salt).update(password).digest("hex");
 
     const user = await User.create({
       name,
       email,
       password: hashPass,
-      salt
-    })
+      salt,
+    });
 
-    return res.status(200).json({ message: "User created successfully" })
+    console.log("USER CREATED =>", user.email);
 
+    return res.status(201).json({ message: "User created successfully" });
   } catch (error) {
-    return res.status(500).json({ message: "Server error" });
+    console.log("SIGNUP ERROR =>", error);
+    return res.status(500).json({ message: error.message });
   }
-})
+});
 
-export default router
+router.post("/login", async (req, res) => {
+  try {
+    console.log("LOGIN BODY =>", req.body);
+
+    let { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    email = email.trim().toLowerCase();
+
+    const user = await User.findOne({ email }).select("+password +salt");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const newHash = createHmac("sha256", user.salt).update(password).digest("hex");
+
+    if (newHash !== user.password) {
+      return res.status(401).json({ message: "Incorrect password" });
+    }
+
+    return res.status(200).json({ message: "Login successful" });
+  } catch (error) {
+    console.log("LOGIN ERROR =>", error);
+    return res.status(500).json({ message: error.message });
+  }
+});
+
+export default router;
 
