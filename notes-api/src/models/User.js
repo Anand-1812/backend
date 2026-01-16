@@ -6,7 +6,6 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      minlength: 2,
       maxlength: 50,
     },
 
@@ -14,9 +13,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      lowercase: true,
       trim: true,
-      match: [/^\S+@\S+\.\S+$/, "Please enter a valid email"],
       index: true,
     },
 
@@ -26,6 +23,9 @@ const userSchema = new mongoose.Schema(
       minlength: 6,
       select: false,
     },
+    salt: {
+      type: String,
+    }
   },
   { timestamps: true }
 );
