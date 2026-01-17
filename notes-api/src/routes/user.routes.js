@@ -1,6 +1,7 @@
 import express from "express";
-import { User } from "../models/User.js";
+import { User, UserSession } from "../models/User.js";
 import { createHmac, randomBytes } from "node:crypto";
+import { generateSessionToken, hashToken } from "../utils/session.js";
 
 const router = express.Router();
 
@@ -50,7 +51,7 @@ router.post("/login", async (req, res) => {
 
     const user = await User.findOne({ email }).select("+password +salt");
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "Invalid credentails" });
     }
 
     const newHash = createHmac("sha256", user.salt).update(password).digest("hex");
@@ -58,6 +59,25 @@ router.post("/login", async (req, res) => {
     if (newHash !== user.password) {
       return res.status(401).json({ message: "Incorrect password" });
     }
+
+    const token = generateSessionToken();
+    const hashToken = hashToken(token);
+
+    const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    await UserSession.create({
+      user: user._id,
+      sessionToken: hashToken,
+      expiresAt: expires
+    })
+
+    // Stores the token in cookie
+    res.cookie("session", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      expires,
+    })
 
     return res.status(200).json({ message: "Login successful" });
   } catch (error) {
