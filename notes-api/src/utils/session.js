@@ -6,6 +6,6 @@ export function generateSessionToken() {
 }
 
 // hash token to be stored in db
-export function hashToken(token) {
+export function generateHashToken(token) {
   return crypto.createHash('sha256').update(token).digest('hex');
 }

@@ -1,7 +1,7 @@
 import express from "express";
 import { User, UserSession } from "../models/User.js";
 import { createHmac, randomBytes } from "node:crypto";
-import { generateSessionToken } from "../utils/session.js";
+import { generateSessionToken, generateHashToken } from "../utils/session.js";
 
 const router = express.Router();
 
@@ -61,7 +61,7 @@ router.post("/login", async (req, res) => {
     }
 
     const token = generateSessionToken();
-    const hashToken = hashToken(token);
+    const hashToken = generateHashToken(token);
 
     const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
@@ -79,6 +79,7 @@ router.post("/login", async (req, res) => {
       expires,
     })
 
+    console.log("Token: ", token)
     return res.status(200).json({ message: "Login successful" });
   } catch (error) {
     console.log("LOGIN ERROR =>", error);
