@@ -1,1 +1,1 @@
-# A repo of me learning about backend with typescript
+# A repo of me learning about backend
