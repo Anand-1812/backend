@@ -1,6 +1,7 @@
 import express from "express";
 import { User, UserSession } from "../models/User.js";
 import { createHmac, randomBytes } from "node:crypto";
+import requireAuth from "../middlewares/auth.middleware.js";
 import { generateSessionToken, generateHashToken } from "../utils/session.js";
 
 const router = express.Router();
@@ -86,6 +87,18 @@ router.post("/login", async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 });
+
+router.post("/logout", requireAuth, async (req, res) => {
+  try {
+    await req.session.deleteOne();
+    res.clearCookie("session");
+
+    return res.json({ message: "Logged out" })
+  } catch (error) {
+    console.error(`Logout error = ${error}`);
+    return res.status(500).json({ message: "Logout error" });
+  }
+})
 
 export default router;
 

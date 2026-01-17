@@ -1,13 +1,13 @@
-import { hashToken } from "../utils/session";
-import { UserSession } from "../models/User";
+import { UserSession } from "../models/User.js";
+import { generateHashToken } from "../utils/session.js";
 
-export default async function requireAuth(req, res, next) {
+const requireAuth = async (req, res, next) => {
   try {
 
     const token = req.cookies.session;
     if (!token) return res.status(401).json({message: "Not logged in"});
 
-    const tokenHash = hashToken(token);
+    const tokenHash = generateHashToken(token);
     const session = await UserSession.findOne({
       sessionToken: tokenHash,
       expiresAt: {$gt: new Date()},
@@ -24,3 +24,4 @@ export default async function requireAuth(req, res, next) {
   }
 }
 
+export default requireAuth;
