@@ -1,7 +1,7 @@
 import express from "express";
 import { User, UserSession } from "../models/User.js";
 import { createHmac, randomBytes } from "node:crypto";
-import { generateSessionToken, hashToken } from "../utils/session.js";
+import { generateSessionToken } from "../utils/session.js";
 
 const router = express.Router();
 
