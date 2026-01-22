@@ -3,6 +3,7 @@ import { User, UserSession } from "../models/User.js";
 import { createHmac, randomBytes } from "node:crypto";
 import requireAuth from "../middlewares/auth.middleware.js";
 import { generateSessionToken, generateHashToken } from "../utils/session.js";
+import { asyncWrapProviders } from "node:async_hooks";
 
 const router = express.Router();
 
@@ -98,6 +99,13 @@ router.post("/logout", requireAuth, async (req, res) => {
     console.error(`Logout error = ${error}`);
     return res.status(500).json({ message: "Logout error" });
   }
+})
+
+// checks the current authentication status
+router.get("/me", requireAuth, async (req, res) => {
+  return res.status(200).json({
+    user: { id: req.user._id, name: req.user.name, email: req.user.email }
+  });
 })
 
 export default router;
