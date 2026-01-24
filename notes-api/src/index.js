@@ -5,6 +5,7 @@ import connectDB from "./db/index.js";
 import cookieParser from "cookie-parser";
 
 import authRouter from "./routes/user.routes.js";
+import notesRouter from "./routes/notes.routes.js";
 
 // dotenv config
 dotenv.config({
@@ -37,7 +38,9 @@ app.get("/api", (_req, res) => {
   res.send("Backend is running")
 });
 
+// api endpoints
 app.use("/api/auth", authRouter)
+app.use("/api/notes", notesRouter)
 
 const PORT = process.env.PORT || 6969;
 
