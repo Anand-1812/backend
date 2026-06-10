@@ -1,63 +1,34 @@
 package main
 
 import (
-	"encoding/json"
+	"database/sql"
 	"fmt"
 	"log"
-	"net/http"
+	"os"
 
-	"github.com/gorilla/mux"
+	"github.com/go-sql-driver/mysql"
 )
 
-type Article struct {
-	ID string `json:"id"`
-	Title string `json:"title"`
-	Desc string `json:"desc"`
-	Content string `json:"content"`
-}
-
-type Articles []Article
-
-func AllArticles(w http.ResponseWriter, r *http.Request) {
-	articles:=Articles {
-  	Article{ID:"1" ,Title:"Test Atricle",Desc:"test  description", Content:"Hello World"},
-  	Article{ID:"2" ,Title:"Test Atricle",Desc:"test  description", Content:"Hello World"},
- 	}
-
-	fmt.Println("Endpoint hit: All article endpoint")
-	json.NewEncoder(w).Encode(articles)
-}
-
-func SingleArticles(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	log.Print(params)
-
-	articles:=Articles {
-  	Article{ID:"1" ,Title:"Test Atricle",Desc:"test  description", Content:"Hello World"},
-  	Article{ID:"2" ,Title:"Test Atricle",Desc:"test  description", Content:"Hello World"},
- 	}
-
-	for _, article := range articles {
-		if article.ID == params["id"] {
-			json.NewEncoder(w).Encode(article)
-			return
-		}
-	}
-
-	json.NewEncoder(w).Encode(&Articles{})
-}
-
-func PostArticles(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "post endpoint hit")
-}
+var db *sql.DB
 
 func main() {
-	router := mux.NewRouter().StrictSlash(true)
+	cfg := mysql.NewConfig()
+	cfg.User = os.Getenv("DBUSER")
+	cfg.Passwd = os.Getenv("DBPASS")
+	cfg.Net = "tcp"
+	cfg.Addr = "127.0.0.1:3306"
+	cfg.DBName = "recordings"
 
-	// routes
-	router.HandleFunc("/articles", AllArticles).Methods("GET")
-	router.HandleFunc("/article/{id}", SingleArticles).Methods("GET")
-	router.HandleFunc("/articles", PostArticles).Methods("POST")
+	var err error
+	db, err = sql.Open("mysql", cfg.FormatDSN())
+	if err != nil {
+		log.Fatalf("Error on opening db:%v", err)
+	}
 
-	log.Fatal(http.ListenAndServe(":8080", router))
+	pingErr := db.Ping()
+	if pingErr != nil {
+		log.Fatalf("error on db ping:%v", pingErr)
+	}
+
+	fmt.Println("connected :)")
 }
