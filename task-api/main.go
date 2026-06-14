@@ -3,15 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
-	"os"
 
+	"task-api/db"
 	"task-api/handlers"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
-	"go.mongodb.org/mongo-driver/v2/mongo"
-	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 const PORT = ":8080"
@@ -22,17 +19,7 @@ type Task struct {
 }
 
 func main() {
-	uri := os.Getenv("MONGO_URI")
-	
-	if uri == "" {
-		log.Fatal("Set your 'MONGO_URI' environment variable.")
-	}
-
-	// mongodb connection
-	client, err := mongo.Connect(options.Client().ApplyURI(uri))
-	if err != nil {
-		panic(err)
-	}
+	client := db.ConnectDb()
 
 	defer func() {
 		if err := client.Disconnect(context.TODO());err != nil {
@@ -40,7 +27,6 @@ func main() {
 		}
 	}()
 	fmt.Println("Connection successfull")
-
 
 	// creating a task
 	coll := client.Database("db").Collection("tasks")
@@ -54,13 +40,22 @@ func main() {
 	fmt.Printf("Insert task with _id: %v\n", result.InsertedID)
 	var resultTask bson.M
 
+	// findind the task
 	err = coll.FindOne(context.TODO(), bson.M{"_id": result.InsertedID}).Decode(&resultTask)
 	if err != nil {
 		fmt.Printf("Failed to find task with err = %v\n", err)
+	} else {
+		fmt.Printf("Found task: %v\n", resultTask)
 	}
 
-	fmt.Printf("Found task: %v\n", resultTask)
+	// deleting the task
+	delResult, delErr := coll.DeleteMany(context.TODO(), bson.M{"_id": result.InsertedID})
 
+	if delErr != nil {
+		panic(delErr)
+	}
+
+	fmt.Printf("Document delete: %d\n", delResult.DeletedCount)
 
 	// routes
 	http.HandleFunc("/api", handlers.HealthCheck())
