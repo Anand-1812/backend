@@ -10,7 +10,7 @@ import (
 
 func ConnectDb() *mongo.Client {
 	uri := os.Getenv("MONGO_URI")
-	
+
 	if uri == "" {
 		log.Fatal("Set your 'MONGO_URI' environment variable.")
 	}
