@@ -16,6 +16,16 @@ type Task struct {
 	Status string        `bson:"status" json:"status"`
 }
 
+type MongoTaskRepository struct {
+	collection *mongo.Collection
+}
+
+func NewMongoTaskRepository(client *mongo.Client) *MongoTaskRepository {
+	return &MongoTaskRepository{
+		collection: client.Database("db").Collection("tasks"),
+	}
+}
+
 func HealthCheck() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -25,17 +35,18 @@ func HealthCheck() http.HandlerFunc {
 
 // implement get task
 func GetTask(client *mongo.Client) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		coll := client.Database("db").Collection("tasks")
+	repo := NewMongoTaskRepository(client)
 
-		tasksFromDb, err := coll.Find(context.TODO(), bson.M{})
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		tasksFromDb, err := repo.collection.Find(context.TODO(), bson.M{})
 		if err != nil {
 			http.Error(w, "failed to fetch tasks", http.StatusInternalServerError)
 			return
 		}
 
 		defer tasksFromDb.Close(context.TODO())
-		
+
 		var tasks []Task
 		err = tasksFromDb.All(context.TODO(), &tasks)
 		if err != nil {
@@ -50,6 +61,8 @@ func GetTask(client *mongo.Client) http.HandlerFunc {
 }
 
 func PostTask(client *mongo.Client) http.HandlerFunc {
+	repo := NewMongoTaskRepository(client)
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
@@ -61,9 +74,7 @@ func PostTask(client *mongo.Client) http.HandlerFunc {
 			return
 		}
 
-		coll := client.Database("db").Collection("tasks")
-
-		result, err := coll.InsertOne(context.Background(), task)
+		result, err := repo.collection.InsertOne(context.Background(), task)
 		if err != nil {
 			http.Error(w, "Failed to insert data", http.StatusInternalServerError)
 			return
@@ -71,7 +82,7 @@ func PostTask(client *mongo.Client) http.HandlerFunc {
 
 		json.NewEncoder(w).Encode(map[string]any{
 			"message": "Task created",
-			"id": result.InsertedID,
+			"id":      result.InsertedID,
 		})
 	}
 }
